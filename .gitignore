@@ -1,0 +1,22 @@
+# Virtual environment
+venv/
+
+# Python bytecode/cache
+__pycache__/
+*.pyc
+
+# Editable install artifacts
+*.egg-info/
+build/
+dist/
+
+# Environment variables / secrets
+.env
+
+# OS clutter
+.DS_Store
+Thumbs.db
+
+# Data files to reduce bloat in the repo
+*.db
+*.sqlite3
