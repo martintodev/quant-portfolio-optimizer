@@ -1,6 +1,7 @@
 import yfinance as yf
 
 
+# Function to fetch price history for a list of tickers
 def get_price_history(ticker_list, start, end):
     result = {}
 
