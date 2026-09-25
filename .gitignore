@@ -20,3 +20,6 @@ Thumbs.db
 # Data files to reduce bloat in the repo
 *.db
 *.sqlite3
+
+#Personal Testing File
+tests/test_scrach.py
