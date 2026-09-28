@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 
 
+# Test cases for the returns module
 def test_simple_returns():
     prices = pd.Series([100, 110, 121])
     expected_returns = pd.Series([0.1, 0.1], index=[1, 2])
