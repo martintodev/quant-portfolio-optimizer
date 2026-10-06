@@ -1,4 +1,5 @@
-from qpo.analytics.risk import annualized_volatility, covariance_matrix, capm_beta
+from scipy.stats import norm
+from qpo.analytics.risk import annualized_volatility, covariance_matrix, capm_beta, expected_shortfall, historical_var, monte_carlo_var, parametric_var
 import pandas as pd
 import numpy as np
 
@@ -41,3 +42,40 @@ def test_capm_beta_for_distinct_returns():
     expected_beta = 2.0
     calculated_beta = capm_beta(stock_returns, market_returns)
     assert np.isclose(calculated_beta, expected_beta)
+
+
+def test_historical_var():
+    returns = pd.Series([0.01, -0.02, 0.03, -0.01, 0.02])
+    confidence_level = 0.95
+    expected_var = 0.018
+    calculated_var = historical_var(returns, confidence_level)
+    assert np.isclose(calculated_var, expected_var)
+
+
+def test_parametric_var():
+    returns = pd.Series([0.01, -0.02, 0.03, -0.01, 0.02])
+    confidence_level = 0.95
+    z = norm.ppf(1 - confidence_level)
+    meanReturns = returns.mean()
+    sdReturns = returns.std()
+    expected_var = -(meanReturns + z * sdReturns)
+    calculated_var = parametric_var(returns, confidence_level)
+    assert np.isclose(calculated_var, expected_var)
+
+
+def test_monte_carlo_var():
+    returns = pd.Series([0.01, -0.02, 0.03, -0.01, 0.02])
+    confidence_level = 0.95
+    calculated_var = monte_carlo_var(returns, confidence_level)
+    parametric_var_value = parametric_var(returns, confidence_level)
+    # Monte Carlo VaR should be close to parametric VaR for a normal distribution
+    assert np.isclose(calculated_var, parametric_var_value, atol=0.02)
+
+
+def test_expected_shortfall():
+    returns = pd.Series([0.01, -0.02, 0.03, -0.01, 0.02])
+    confidence_level = 0.95
+    historical_var_value = historical_var(returns, confidence_level)
+    calculated_es = expected_shortfall(returns, confidence_level)
+    # ES should be greater than or equal to VaR
+    assert calculated_es >= historical_var_value
