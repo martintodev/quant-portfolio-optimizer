@@ -71,3 +71,24 @@ def efficient_frontier(cov_matrix, expected_returns, n_points=20):
                        "volatility": vol, "weights": weights})
 
     return pd.DataFrame(results)
+
+
+# Function to calculate the Sharpe ratio given weights, expected returns, covariance matrix, and risk-free rate
+def sharpe_ratio(weights, expected_returns, cov_matrix, risk_free_rate=0.03):
+    returns = portfolio_return(weights, expected_returns)
+    volatility = portfolio_volatility(weights, cov_matrix)
+    return (returns - risk_free_rate) / volatility
+
+
+# Function to find the portfolio with the maximum Sharpe ratio from the efficient frontier
+def max_sharpe_portfolio(frontier_df, expected_returns, cov_matrix, risk_free_rate=0.03):
+    max_sharpe = -np.inf
+    optimal_weights = None
+    for index, row in frontier_df.iterrows():
+        temp_sharpe = sharpe_ratio(
+            row["weights"], expected_returns, cov_matrix, risk_free_rate)
+        if temp_sharpe > max_sharpe:
+            max_sharpe = temp_sharpe
+            optimal_weights = row["weights"]
+
+    return optimal_weights

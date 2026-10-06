@@ -1,4 +1,4 @@
-from qpo.optimization.mean_variance import efficient_frontier, min_variance_weights, min_variance_weights_for_target_return
+from qpo.optimization.mean_variance import efficient_frontier, max_sharpe_portfolio, min_variance_weights, min_variance_weights_for_target_return
 import pandas as pd
 import numpy as np
 import cvxpy as cp
@@ -112,3 +112,25 @@ def test_efficient_frontier_first_row_weights():
     # Check the weights of the first row
     first_row_weights = frontier.iloc[0]['weights']
     assert np.allclose(first_row_weights, min_weights)
+
+
+def test_max_sharpe_portfolio_weights():
+    # Create a simple covariance matrix and expected returns for testing
+    cov_matrix = pd.DataFrame({
+        'A': [1.0, 0.5],
+        'B': [0.5, 1.0]
+    })
+    expected_returns = pd.Series({'A': 0.1, 'B': 0.2})
+    frontier = efficient_frontier(cov_matrix, expected_returns, n_points=10)
+
+    # Calculate the max Sharpe portfolio weights
+    best_weights = max_sharpe_portfolio(frontier, expected_returns, cov_matrix)
+
+    # Check that the weights sum to 1
+    assert np.isclose(np.sum(best_weights), 1.0)
+
+    # Check that the weights are non-negative
+    assert np.all(best_weights >= 0)
+
+    assert np.isclose(best_weights[0], 0.0, atol=0.01)  # A's weight
+    assert np.isclose(best_weights[1], 1.0, atol=0.01)  # B's weight
