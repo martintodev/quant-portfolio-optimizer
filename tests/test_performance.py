@@ -1,4 +1,4 @@
-from qpo.backtest.performance import wealth_index, max_drawdown
+from qpo.backtest.performance import wealth_index, max_drawdown, rolling_sharpe
 import numpy as np
 import pandas as pd
 
@@ -34,3 +34,35 @@ def test_max_drawdown_start_with_loss():
 
     max_drawdown_result = max_drawdown(returns)
     assert np.isclose(max_drawdown_result, expected_max_drawdown)
+
+
+def test_rolling_sharpe_length():
+    rng = np.random.default_rng(0)
+    returns = pd.Series(rng.normal(0, 0.01, 100))
+    window = 20
+
+    rolling_sharpe_result = rolling_sharpe(returns, window=window)
+    assert len(rolling_sharpe_result) == 100
+    assert rolling_sharpe_result.iloc[:window - 1].isna().all()
+    assert rolling_sharpe_result.iloc[window - 1:].notna().all()
+
+
+def test_rolling_sharpe_full_window():
+    rng = np.random.default_rng(0)
+    returns = pd.Series(rng.normal(0, 0.01, 100))
+    result = rolling_sharpe(returns, window=100)
+    expected = (returns.mean() * 252 - 0.03) / (returns.std() * np.sqrt(252))
+    assert np.isclose(result.iloc[-1], expected)
+
+
+def test_rolling_sharpe_constant_returns():
+    returns = pd.Series(np.full(100, 0.01))
+    window = 20
+
+    rolling_sharpe_result = rolling_sharpe(returns, window=window)
+    expected_sharpe = (returns.rolling(window).mean() * 252 - 0.03) / (
+        returns.rolling(window).std() * np.sqrt(252))
+
+    assert isinstance(rolling_sharpe_result, pd.Series)
+    assert len(rolling_sharpe_result) == 100
+    assert rolling_sharpe_result.isna().all()
