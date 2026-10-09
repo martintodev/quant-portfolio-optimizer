@@ -22,4 +22,4 @@ Thumbs.db
 *.sqlite3
 
 #Personal Testing File
-tests/test_scrach.py
+scripts/test_scrach.py
