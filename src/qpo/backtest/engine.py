@@ -13,7 +13,7 @@ def weights_for_window(window_returns: pd.DataFrame):
 
 
 # Function to run a backtest on a DataFrame of returns
-def run_backtest(returns_df, lookback=504, rebalance_frequency=21, cost_rate=0.001):
+def run_backtest(returns_df, lookback=504, rebalance_frequency=21, cost_rate=0.001, weight_fn=weights_for_window):
     rebalance_points = range(lookback, len(returns_df), rebalance_frequency)
     previous_weights = np.zeros(returns_df.shape[1])
 
@@ -23,7 +23,7 @@ def run_backtest(returns_df, lookback=504, rebalance_frequency=21, cost_rate=0.0
         window = returns_df.iloc[i - lookback:i]
         holding_period = returns_df.iloc[i:i + rebalance_frequency]
 
-        new_weights = weights_for_window(window)
+        new_weights = weight_fn(window)
 
         period_returns = holding_period @ new_weights
 
