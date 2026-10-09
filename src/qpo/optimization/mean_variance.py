@@ -37,6 +37,8 @@ def min_variance_weights_for_target_return(cov_matrix, expected_returns, target_
 
     problem = cp.Problem(cp.Minimize(portfolio_variance), constraints)
     problem.solve()
+    if problem.status != cp.OPTIMAL:
+        return None
 
     return w.value
 

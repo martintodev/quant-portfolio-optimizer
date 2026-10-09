@@ -2,6 +2,7 @@ from qpo.optimization.mean_variance import efficient_frontier, max_sharpe_portfo
 import pandas as pd
 import numpy as np
 import cvxpy as cp
+from unittest.mock import patch, PropertyMock
 
 
 # Test cases for the mean_variance module
@@ -134,3 +135,19 @@ def test_max_sharpe_portfolio_weights():
 
     assert np.isclose(best_weights[0], 0.0, atol=0.01)  # A's weight
     assert np.isclose(best_weights[1], 1.0, atol=0.01)  # B's weight
+
+
+# Test that fakes a non-optimal status and checks the function returns none
+def test_target_return_returns_none_when_solution_not_optimal():
+    cov_matrix = pd.DataFrame({
+        'A': [1.0, 0.5],
+        'B': [0.5, 1.0]
+    })
+    expected_returns = pd.Series({'A': 0.1, 'B': 0.2})
+
+    with patch.object(cp.Problem, "status", new_callable=PropertyMock) as mock_status:
+        mock_status.return_value = cp.OPTIMAL_INACCURATE
+        weights = min_variance_weights_for_target_return(
+            cov_matrix, expected_returns, 0.15)
+
+    assert weights is None
