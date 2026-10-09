@@ -60,8 +60,6 @@ def test_rolling_sharpe_constant_returns():
     window = 20
 
     rolling_sharpe_result = rolling_sharpe(returns, window=window)
-    expected_sharpe = (returns.rolling(window).mean() * 252 - 0.03) / (
-        returns.rolling(window).std() * np.sqrt(252))
 
     assert isinstance(rolling_sharpe_result, pd.Series)
     assert len(rolling_sharpe_result) == 100

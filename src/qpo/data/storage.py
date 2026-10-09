@@ -28,12 +28,12 @@ def save_prices(ticker, df, db_path='data/prices.db'):
     conn.close()
 
 
-# Function to retrieve price data for a given ticker from the database
+# Function to retrieve price data for a given ticker from the database, end exclusive
 def load_prices(ticker, start, end, db_path='data/prices.db'):
     conn = sqlite3.connect(db_path)
 
     df = pd.read_sql_query(
-        "SELECT date, open, high, low, close, volume FROM prices WHERE ticker = ? AND date >= ? AND date <= ? ORDER BY date",
+        "SELECT date, open, high, low, close, volume FROM prices WHERE ticker = ? AND date >= ? AND date < ? ORDER BY date",
         conn, params=(ticker, start, end), parse_dates=['date'])
 
     conn.close()
