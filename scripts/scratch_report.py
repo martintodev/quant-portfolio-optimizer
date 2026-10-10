@@ -9,6 +9,8 @@ from qpo.backtest.engine import (
     weights_for_window,
 )
 from qpo.backtest.performance import max_drawdown, rolling_sharpe
+from qpo.analytics.risk import covariance_matrix, annualized_expected_returns
+from qpo.optimization.mean_variance import efficient_frontier
 
 
 LOOKBACK = 504
@@ -52,6 +54,10 @@ def report_strategy(name, returns, weight_fn):
     top = weight_history.idxmax(axis=1)
     print("Top-ticker changes:", (top != top.shift()).sum() - 1)
     print(top.value_counts())
+    per_rebalance_turnover = weight_history.diff().abs().sum(axis=1).iloc[1:]
+    print("Turnover median / max:",
+          per_rebalance_turnover.median(), per_rebalance_turnover.max())
+    print(weight_history.round(2).iloc[20:26])
 
 
 def main():
@@ -77,6 +83,14 @@ def main():
     print("Sharpe:", rolling_sharpe(
         equal_weight, window=len(equal_weight)).iloc[-1])
     print("Max drawdown:", max_drawdown(equal_weight))
+
+    short = 0
+    for i in range(LOOKBACK, len(sample), REBALANCE_FREQUENCY):
+        w = sample.iloc[i - LOOKBACK:i]
+        f = efficient_frontier(covariance_matrix(
+            w), annualized_expected_returns(w))
+        short += len(f) < 20
+    print("Windows with a short frontier:", short)
 
 
 if __name__ == "__main__":
