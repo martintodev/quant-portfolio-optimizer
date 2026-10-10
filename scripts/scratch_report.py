@@ -1,6 +1,7 @@
 import sys
 import time
 import warnings
+import pandas as pd
 from qpo.pipeline import get_close_prices
 from qpo.analytics.returns import log_returns
 from qpo.backtest.engine import (
@@ -57,7 +58,17 @@ def report_strategy(name, returns, weight_fn):
     per_rebalance_turnover = weight_history.diff().abs().sum(axis=1).iloc[1:]
     print("Turnover median / max:",
           per_rebalance_turnover.median(), per_rebalance_turnover.max())
-    print(weight_history.round(2).iloc[20:26])
+    print(weight_history.clip(lower=0).round(2).iloc[20:26])
+
+    forward = []
+    for date in weight_history.index:
+        pos = returns.index.get_loc(date)
+        forward.append(returns.iloc[pos:pos + REBALANCE_FREQUENCY].sum())
+    forward = pd.DataFrame(forward, index=weight_history.index)
+    tilt = weight_history - 1 / weight_history.shape[1]
+    selection = (tilt * forward).sum(axis=1)
+    print("Mean gain vs equal-weight from weights:", selection.mean())
+    print("Share of rebalances where tilt helped:", (selection > 0).mean())
 
 
 def main():
