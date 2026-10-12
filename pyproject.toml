@@ -1,7 +1,17 @@
 [project]
 name = "quant-portfolio-optimizer"
 version = "0.1.0"
-requires-python = ">=3.10"
+requires-python = ">=3.12"
+dependencies = [
+    "pandas>=3.0.6",
+    "numpy>=2.5.3",
+    "scipy>=1.18.1",
+    "cvxpy>=1.9.3",
+    "yfinance>=1.7.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=9.1.1"]
 
 [build-system]
 requires = ["setuptools>=61.0"]
