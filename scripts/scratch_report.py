@@ -2,6 +2,7 @@ import sys
 import time
 import warnings
 import pandas as pd
+import numpy as np
 from qpo.pipeline import get_close_prices
 from qpo.analytics.returns import log_returns
 from qpo.backtest.engine import (
@@ -12,6 +13,7 @@ from qpo.backtest.engine import (
 from qpo.backtest.performance import max_drawdown, rolling_sharpe
 from qpo.analytics.risk import covariance_matrix, annualized_expected_returns
 from qpo.optimization.mean_variance import efficient_frontier
+from qpo.backtest.performance import wealth_index
 
 
 LOOKBACK = 504
@@ -41,6 +43,8 @@ def report_strategy(name, returns, weight_fn):
     print("Sharpe:", rolling_sharpe(
         strategy_returns, window=len(strategy_returns)).iloc[-1])
     print("Max drawdown:", max_drawdown(strategy_returns))
+    print("Ending value of $1:", wealth_index(strategy_returns).iloc[-1])
+    print("Annualized volatility:", strategy_returns.std() * np.sqrt(252))
     print("Average turnover:",
           weight_history.diff().abs().sum(axis=1).iloc[1:].mean())
     print("Average weight per ticker:")
@@ -69,6 +73,8 @@ def report_strategy(name, returns, weight_fn):
     selection = (tilt * forward).sum(axis=1)
     print("Mean gain vs equal-weight from weights:", selection.mean())
     print("Share of rebalances where tilt helped:", (selection > 0).mean())
+    print("Tilt gain standard error:",
+          selection.std() / np.sqrt(len(selection)))
 
 
 def main():
@@ -91,6 +97,8 @@ def main():
 
     equal_weight = sample.iloc[LOOKBACK:].mean(axis=1)
     print("\nEqual-weight")
+    print("Ending value of $1:", wealth_index(equal_weight).iloc[-1])
+    print("Annualized volatility:", equal_weight.std() * np.sqrt(252))
     print("Sharpe:", rolling_sharpe(
         equal_weight, window=len(equal_weight)).iloc[-1])
     print("Max drawdown:", max_drawdown(equal_weight))

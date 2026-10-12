@@ -9,17 +9,17 @@
 - **Costs:** 10 bps per unit of turnover, including the initial purchase
 - **Sharpe:** annualized over the whole out-of-sample series, 3% risk-free rate
 - **Benchmark:** equal-weight, rebalanced daily with no costs, over the same dates
-- **Scorecard:** Sharpe, max drawdown, average turnover, mean weight per ticker, fallback count
+- **Scorecard (fixed before running):** Sharpe, max drawdown, average turnover, mean weight per ticker, fallback count
 
 ## Results
 
-| Strategy     | Sharpe | Max drawdown | Avg turnover | Mean largest weight | Fallbacks |
-| ------------ | ------ | ------------ | ------------ | ------------------- | --------- |
-| Min-variance | 0.362  | 15.3%        | 0.051        | 0.43                | 0 / 60    |
-| Max-Sharpe   | 0.449  | 20.2%        | 0.346        | 0.71                | 0 / 60    |
-| Equal-weight | 0.835  | 16.0%        | n/a          | 0.17                | n/a       |
+| Strategy     | Ending $1 | Annual return | Annual vol | Sharpe | Max drawdown | Avg turnover | Mean largest weight | Fallbacks |
+| ------------ | --------- | ------------- | ---------- | ------ | ------------ | ------------ | ------------------- | --------- |
+| Min-variance | 1.47      | 7.7%          | 13.0%      | 0.362  | 15.3%        | 0.051        | 0.43                | 0 / 60    |
+| Max-Sharpe   | 1.87      | 12.6%         | 21.4%      | 0.449  | 20.2%        | 0.346        | 0.71                | 0 / 60    |
+| Equal-weight | 2.11      | 14.9%         | 14.3%      | 0.835  | 16.0%        | n/a          | 0.17                | n/a       |
 
-Turnover excludes the initial purchase. Ending value of $1: min-variance 1.47, equal-weight 2.11, max-Sharpe not measured.
+Annual return is the mean daily log return times 252, net of costs for the two strategies. Turnover excludes the initial purchase.
 
 Average weights:
 
@@ -28,8 +28,8 @@ Average weights:
 
 ## What the results support
 
-1. **Min-variance underperformed because of where it put the money.** It averaged 74% in JNJ and PG, the two weakest performers over the period. Its weights cost 0.6% per rebalance against equal-weight on average and helped in 30% of rebalances. Over 60 rebalances that is about -0.36 in log return, which matches its actual gap to equal-weight.
-2. **Max-Sharpe held concentrated positions that shifted every month.** Its top-weighted ticker changed only 6 times in 60 rebalances, but median turnover was 0.32 (maximum 1.09) and the largest single weight averaged 71%. Its weights cost 0.16% per rebalance on average before costs and helped in 55% of rebalances.
+1. **Min-variance underperformed because of where it put the money.** It averaged 74% in JNJ and PG, the two weakest performers over the period. Its weights cost 0.6% per rebalance against equal-weight on average (standard error 0.30%, about two standard errors below zero) and helped in 30% of rebalances. Over 60 rebalances that is about -0.36 in log return, which matches its actual gap to equal-weight (-0.36).
+2. **Max-Sharpe held concentrated positions that shifted every month.** Its top-weighted ticker changed only 6 times in 60 rebalances, but median turnover was 0.32 (maximum 1.09) and the largest single weight averaged 71%. Its weights cost 0.16% per rebalance on average before costs (standard error 0.51%, so indistinguishable from zero) and helped in 55% of rebalances.
 3. **The Sharpe gap between the two strategies is within noise.** A Sharpe ratio over about five years has a standard error of roughly 0.45, and the difference is 0.09.
 4. **Both lost to equal-weight on Sharpe.** This is consistent with the finding that estimated expected returns hurt out of sample. It does not prove it, given the sample below.
 
@@ -39,9 +39,16 @@ Average weights:
 - Transaction costs were not the explanation. Min-variance cost drag was 0.006 in ending wealth against a gap of 0.64 to equal-weight.
 - Lookahead tests cover both strategies. Introducing a one-row lookahead leak into the engine makes the first-holding-day test fail for both, so that test can detect a leak.
 
-## Open question (hypothesis, not measured)
+## Why max-Sharpe's Sharpe is below equal-weight
 
-Max-Sharpe's weights cost little against equal-weight, yet its Sharpe is far lower. A back-of-envelope estimate from the figures above suggests its volatility is around 21% against 14% for equal-weight, which would make concentration the cause and not poor stock selection. Max-Sharpe's total return and volatility were not measured in the final run, so this needs a rerun to confirm or reject.
+Max-Sharpe's weights cost little against equal-weight on average, yet its Sharpe is 0.39 lower. The measured figures show two causes:
+
+- **Higher volatility:** 21.4% against 14.3%, a gap of 7.1 points.
+- **Lower return:** 12.6% a year against 14.9%, a gap of 2.3 points. The tilt effect (-0.094 over 60 rebalances) plus transaction costs (about -0.02) accounts for the log-return gap (-0.116).
+
+Splitting the Sharpe gap between the two depends on which is adjusted first. Volatility accounts for 58% of it if return is adjusted first and 72% if volatility is adjusted first. So concentration risk is the larger factor, but the lower return is a real part of it too.
+
+This describes what happened. It does not show why a trailing two-year window produces concentrated positions, and that was not tested directly. The standard errors above assume the monthly rebalances are independent.
 
 ## Limitations
 
