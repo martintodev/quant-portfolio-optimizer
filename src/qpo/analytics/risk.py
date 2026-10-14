@@ -2,9 +2,8 @@ import pandas as pd
 import numpy as np
 from scipy.stats import norm
 
+
 # Calculates the annualized volatility of a series of returns
-
-
 def annualized_volatility(returns: pd.Series, periods_per_year: int = 252):
     return returns.std() * np.sqrt(periods_per_year)
 
@@ -16,8 +15,12 @@ def covariance_matrix(returns: pd.DataFrame, periods_per_year: int = 252):
 
 # Calculates the CAPM beta of a stock relative to the market
 def capm_beta(stock_returns: pd.Series, market_returns: pd.Series):
-    beta = pd.DataFrame(
-        {'stock': stock_returns, 'market': market_returns}).cov().loc['stock', 'market'] / market_returns.var()
+    df = pd.concat([stock_returns, market_returns],
+                   axis=1, join="inner").dropna()
+    stock = df.iloc[:, 0].to_numpy()
+    market = df.iloc[:, 1].to_numpy()
+
+    beta = np.cov(stock, market)[0, 1] / np.var(market, ddof=1)
     return beta
 
 

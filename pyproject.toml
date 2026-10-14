@@ -11,7 +11,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=9.1.1"]
+dev = [
+    "pytest>=9.1.1",
+    "mypy>=2.4.0",
+    "pandas-stubs>=3.0.5.260914",
+    "scipy-stubs>=1.18.1.1",
+]
 
 [build-system]
 requires = ["setuptools>=61.0"]
@@ -19,3 +24,11 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["src"]
+
+[[tool.mypy.overrides]]
+module = ["yfinance.*", "cvxpy.*"]
+ignore_missing_imports = true

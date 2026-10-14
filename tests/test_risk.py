@@ -44,6 +44,26 @@ def test_capm_beta_for_distinct_returns():
     assert np.isclose(calculated_beta, expected_beta)
 
 
+def test_capm_beta_shifted_dates():
+    dates = pd.date_range("2023-01-02", periods=7, freq="B")
+    market_returns = pd.Series(
+        [0.01, 0.02, 0.03, 0.00, -0.01], index=dates[:5])
+    stock_returns = pd.Series([0.01, 0.04, 0.05, 0.01, -0.03], index=dates[2:])
+
+    expected_beta = -1.0
+    calculated_beta = capm_beta(stock_returns, market_returns)
+    assert np.isclose(calculated_beta, expected_beta)
+
+
+def test_capm_beta_nan_row():
+    market_returns = pd.Series([0.01, 0.02, 0.03, 0.00, -0.01])
+    stock_returns = pd.Series([0.01, 0.04, np.nan, 0.01, -0.03])
+
+    expected_beta = 2.1
+    calculated_beta = capm_beta(stock_returns, market_returns)
+    assert np.isclose(calculated_beta, expected_beta)
+
+
 def test_historical_var():
     returns = pd.Series([0.01, -0.02, 0.03, -0.01, 0.02])
     confidence_level = 0.95
