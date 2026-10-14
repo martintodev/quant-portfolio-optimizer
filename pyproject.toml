@@ -33,3 +33,7 @@ check_untyped_defs = true
 [[tool.mypy.overrides]]
 module = ["yfinance.*", "cvxpy.*"]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["qpo.analytics.*"]
+disallow_untyped_defs = true
