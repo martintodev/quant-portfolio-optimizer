@@ -28,6 +28,7 @@ where = ["src"]
 [tool.mypy]
 python_version = "3.12"
 files = ["src"]
+check_untyped_defs = true
 
 [[tool.mypy.overrides]]
 module = ["yfinance.*", "cvxpy.*"]
