@@ -6,7 +6,7 @@ T = TypeVar("T", pd.Series, pd.DataFrame)
 
 
 # Calculates simple returns for a given series of prices
-def simple_returns(prices: pd.Series):
+def simple_returns(prices: pd.Series) -> pd.Series:
     return prices.pct_change().dropna()
 
 
