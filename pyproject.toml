@@ -35,5 +35,5 @@ module = ["yfinance.*", "cvxpy.*"]
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["qpo.analytics.*", "qpo.backtest.performance.*", "qpo.data.fetcher.*"]
+module = ["qpo.analytics.*", "qpo.backtest.performance.*", "qpo.data.fetcher.*","qpo.data.storage.*"]
 disallow_untyped_defs = true
