@@ -1,4 +1,4 @@
-from qpo.optimization.mean_variance import efficient_frontier, max_sharpe_portfolio, min_variance_weights, min_variance_weights_for_target_return, SolverError
+from qpo.optimization.mean_variance import efficient_frontier, max_sharpe_portfolio, min_variance_weights, min_variance_weights_for_target_return, SolverError, sharpe_ratio
 import pandas as pd
 import numpy as np
 import cvxpy as cp
@@ -163,3 +163,10 @@ def test_target_return_returns_none_when_solution_not_optimal():
             cov_matrix, expected_returns, 0.15)
 
     assert weights is None
+
+
+def test_sharpe_ratio_is_nan_when_volatility_is_zero():
+    weights = np.array([1.0, 0.0])
+    expected_returns = pd.Series({'A': 0.05, 'B': 0.05})
+    cov_matrix = pd.DataFrame(np.zeros((2, 2)), columns=['A', 'B'])
+    assert np.isnan(sharpe_ratio(weights, expected_returns, cov_matrix))

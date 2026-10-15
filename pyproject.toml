@@ -29,17 +29,8 @@ where = ["src"]
 python_version = "3.12"
 files = ["src"]
 check_untyped_defs = true
+disallow_untyped_defs = true
 
 [[tool.mypy.overrides]]
 module = ["yfinance.*", "cvxpy.*"]
 ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = [
-    "qpo.analytics.*",
-    "qpo.backtest.performance",
-    "qpo.data.*",
-    "qpo.pipeline",
-    "qpo.optimization.*",
-]
-disallow_untyped_defs = true

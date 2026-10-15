@@ -8,6 +8,8 @@ import numpy as np
 import pandas as pd
 import pytest
 import warnings
+from unittest.mock import patch
+from qpo.optimization.mean_variance import SolverError
 
 
 # Create a simple synthetic dataset for testing
@@ -234,3 +236,34 @@ def test_run_backtest_return_weights_records_fallback_weights():
     assert np.allclose(weights.iloc[1], weights.iloc[0])
     assert np.allclose(weights.iloc[3], weights.iloc[2])
     assert not np.allclose(weights.iloc[2], weights.iloc[1])
+
+
+def test_max_sharpe_weights_for_window_uses_max_sharpe_portfolio():
+    window = create_fake_returns_data().iloc[:30]
+    with patch("qpo.backtest.engine.max_sharpe_portfolio",
+               return_value=np.array([0.2, 0.8])) as mock_pick:
+        result = max_sharpe_weights_for_window(window)
+    mock_pick.assert_called_once()
+    assert np.allclose(result, [0.2, 0.8])
+
+
+def test_weights_for_window_returns_none_on_solver_error():
+    window = create_fake_returns_data().iloc[:30]
+    with patch("qpo.backtest.engine.min_variance_weights",
+               side_effect=SolverError("failed")):
+        assert weights_for_window(window) is None
+
+
+def test_max_sharpe_weights_for_window_none_on_solver_error():
+    window = create_fake_returns_data().iloc[:30]
+    with patch("qpo.backtest.engine.efficient_frontier",
+               side_effect=SolverError("failed")):
+        assert max_sharpe_weights_for_window(window) is None
+
+
+def test_weights_for_window_propagates_other_value_errors():
+    window = create_fake_returns_data().iloc[:30]
+    with patch("qpo.backtest.engine.min_variance_weights",
+               side_effect=ValueError("shape mismatch")):
+        with pytest.raises(ValueError, match="shape mismatch"):
+            weights_for_window(window)
