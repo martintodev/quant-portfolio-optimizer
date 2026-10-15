@@ -20,7 +20,7 @@ def min_variance_weights(cov_matrix: pd.DataFrame) -> np.ndarray:
 
     weights = w.value
     if weights is None:
-        raise ValueError(
+        raise SolverError(
             f"Minimum-variance solve failed (status: {problem.status})")
     return weights
 
@@ -55,6 +55,11 @@ def portfolio_return(weights: np.ndarray, expected_returns: pd.Series) -> float:
 # Function to calculate portfolio volatility given weights and covariance matrix
 def portfolio_volatility(weights: np.ndarray, cov_matrix: pd.DataFrame) -> float:
     return float(np.sqrt(weights @ cov_matrix.values @ weights))
+
+
+class SolverError(ValueError):
+    """Raised when the optimization solver fails to find a valid solution."""
+    pass
 
 
 # Function to calculate the efficient frontier given a covariance matrix and expected returns
