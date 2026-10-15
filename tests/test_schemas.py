@@ -24,7 +24,7 @@ class TestOptimizeRequest:
                 start=date(2023, 1, 1),
                 end=date(2023, 12, 31)
             )
-        assert "List should have at least 2 items" in str(exc_info.value)
+        assert exc_info.value.errors()[0]["type"] == "too_short"
 
     def test_OptimizeRequest_eleven_tickers_rejected(self):
         # max_length=10 should reject the fixture's 11 tickers
@@ -35,7 +35,7 @@ class TestOptimizeRequest:
                 start=date(2023, 1, 1),
                 end=date(2023, 12, 31)
             )
-        assert "List should have at most 10 items" in str(exc_info.value)
+        assert exc_info.value.errors()[0]["type"] == "too_long"
 
     def test_OptimizeRequest_unknown_strategy_rejected(self):
         # Literal constraints should reject invalid strategy types
@@ -46,8 +46,7 @@ class TestOptimizeRequest:
                 end=date(2023, 12, 31),
                 strategy="invalid_strategy"  # type: ignore
             )
-        assert "Input should be 'min_variance' or 'max_sharpe'" in str(
-            exc_info.value)
+        assert exc_info.value.errors()[0]["type"] == "literal_error"
 
     def test_OptimizeRequest_end_before_start_rejected(self):
         # The custom @model_validator should trigger when end <= start
@@ -57,5 +56,14 @@ class TestOptimizeRequest:
                 start=date(2023, 12, 31),
                 end=date(2023, 1, 1)
             )
-        assert "The 'end' date must come strictly after the 'start' date." in str(
-            exc_info.value)
+        assert exc_info.value.errors()[0]["type"] == "value_error"
+
+    def test_OptimizeRequest_end_equal_start_rejected(self):
+        # The custom @model_validator should trigger when end == start
+        with pytest.raises(ValidationError) as exc_info:
+            OptimizeRequest(
+                tickers=["AAPL", "MSFT"],
+                start=date(2023, 12, 31),
+                end=date(2023, 12, 31)
+            )
+        assert exc_info.value.errors()[0]["type"] == "value_error"
