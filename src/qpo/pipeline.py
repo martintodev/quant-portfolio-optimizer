@@ -1,9 +1,10 @@
 from qpo.data.storage import load_prices, save_prices, init_db
 from qpo.data.fetcher import get_price_history
 import pandas as pd
+from pathlib import Path
 
 
-def cache_covers_range(cached_prices, start, end, tolerance_days=4):
+def cache_covers_range(cached_prices: pd.DataFrame, start: str, end: str, tolerance_days: int = 4) -> bool:
     if cached_prices.empty:
         return False
 
@@ -20,9 +21,9 @@ def cache_covers_range(cached_prices, start, end, tolerance_days=4):
     )
 
 
-def get_close_prices(tickers, start, end, db_path='data/prices.db', max_missing_fraction=0.05):
+def get_close_prices(tickers: list[str], start: str, end: str, db_path: str | Path = 'data/prices.db', max_missing_fraction: float = 0.05) -> pd.DataFrame:
     init_db(db_path)  # Ensure the database is initialized
-    ticker_data = {}
+    ticker_data: dict[str, pd.Series] = {}
 
     for ticker in tickers:
         # Load any cached data for the requested range
