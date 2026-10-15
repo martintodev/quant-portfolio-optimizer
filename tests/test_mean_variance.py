@@ -2,6 +2,7 @@ from qpo.optimization.mean_variance import efficient_frontier, max_sharpe_portfo
 import pandas as pd
 import numpy as np
 import cvxpy as cp
+import pytest
 from unittest.mock import patch, PropertyMock
 
 
@@ -24,6 +25,17 @@ def test_min_variance_weights_are_non_negative():
     })
     weights = min_variance_weights(cov_matrix)
     assert np.all(weights >= 0)
+
+
+def test_min_variance_weights_raises_when_solver_returns_nothing():
+    # Create a simple covariance matrix for testing
+    cov_matrix = pd.DataFrame({'A': [1.0, 0.5], 'B': [0.5, 1.0]})
+
+    # Assert that the specific ValueError is thrown
+    with patch.object(cp.Problem, "solve"):
+        with pytest.raises(ValueError, match="solve failed"):
+            # This function call must fail for the test to pass
+            min_variance_weights(cov_matrix)
 
 
 def test_min_variance_weights_for_target_return_sum_to_one():

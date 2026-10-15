@@ -4,7 +4,7 @@ import pandas as pd
 
 
 # Function to calculate minimum variance weights given a covariance matrix
-def min_variance_weights(cov_matrix: pd.DataFrame):
+def min_variance_weights(cov_matrix: pd.DataFrame) -> np.ndarray:
     n = len(cov_matrix)
     w = cp.Variable(n)
 
@@ -18,11 +18,15 @@ def min_variance_weights(cov_matrix: pd.DataFrame):
     problem = cp.Problem(cp.Minimize(portfolio_variance), constraints)
     problem.solve()
 
-    return w.value
+    weights = w.value
+    if weights is None:
+        raise ValueError(
+            f"Minimum-variance solve failed (status: {problem.status})")
+    return weights
 
 
 # Function to calculate minimum variance weights for a target return
-def min_variance_weights_for_target_return(cov_matrix, expected_returns, target_return):
+def min_variance_weights_for_target_return(cov_matrix: pd.DataFrame, expected_returns: pd.Series, target_return: float) -> np.ndarray | None:
     n = len(cov_matrix)
     w = cp.Variable(n)
 
@@ -44,17 +48,17 @@ def min_variance_weights_for_target_return(cov_matrix, expected_returns, target_
 
 
 # Function to calculate portfolio return given weights and expected returns
-def portfolio_return(weights, expected_returns):
-    return weights @ expected_returns.values
+def portfolio_return(weights: np.ndarray, expected_returns: pd.Series) -> float:
+    return float(weights @ expected_returns.values)
 
 
 # Function to calculate portfolio volatility given weights and covariance matrix
-def portfolio_volatility(weights, cov_matrix):
-    return np.sqrt(weights @ cov_matrix.values @ weights)
+def portfolio_volatility(weights: np.ndarray, cov_matrix: pd.DataFrame) -> float:
+    return float(np.sqrt(weights @ cov_matrix.values @ weights))
 
 
 # Function to calculate the efficient frontier given a covariance matrix and expected returns
-def efficient_frontier(cov_matrix, expected_returns, n_points=20):
+def efficient_frontier(cov_matrix: pd.DataFrame, expected_returns: pd.Series, n_points: int = 20) -> pd.DataFrame:
     min_var_weights = min_variance_weights(cov_matrix)
     min_return = portfolio_return(min_var_weights, expected_returns)
     max_return = expected_returns.max()
@@ -76,14 +80,16 @@ def efficient_frontier(cov_matrix, expected_returns, n_points=20):
 
 
 # Function to calculate the Sharpe ratio given weights, expected returns, covariance matrix, and risk-free rate
-def sharpe_ratio(weights, expected_returns, cov_matrix, risk_free_rate=0.03):
+def sharpe_ratio(weights: np.ndarray, expected_returns: pd.Series, cov_matrix: pd.DataFrame, risk_free_rate: float = 0.03) -> float:
     returns = portfolio_return(weights, expected_returns)
     volatility = portfolio_volatility(weights, cov_matrix)
+    if volatility <= 1e-12:
+        return float("nan")
     return (returns - risk_free_rate) / volatility
 
 
 # Function to find the portfolio with the maximum Sharpe ratio from the efficient frontier
-def max_sharpe_portfolio(frontier_df, expected_returns, cov_matrix, risk_free_rate=0.03):
+def max_sharpe_portfolio(frontier_df: pd.DataFrame, expected_returns: pd.Series, cov_matrix: pd.DataFrame, risk_free_rate: float = 0.03) -> np.ndarray | None:
     max_sharpe = -np.inf
     optimal_weights = None
     for index, row in frontier_df.iterrows():
