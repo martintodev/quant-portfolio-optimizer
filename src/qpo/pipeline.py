@@ -1,7 +1,12 @@
 from qpo.data.storage import load_prices, save_prices, init_db
 from qpo.data.fetcher import get_price_history
+from qpo.analytics.returns import log_returns
 import pandas as pd
 from pathlib import Path
+
+
+class DataError(ValueError):
+    """Raised when price data is missing or unusable for the requested range."""
 
 
 def cache_covers_range(cached_prices: pd.DataFrame, start: str, end: str, tolerance_days: int = 4) -> bool:
@@ -34,7 +39,7 @@ def get_close_prices(tickers: list[str], start: str, end: str, db_path: str | Pa
             price_data = get_price_history([ticker], start, end)
 
             if ticker not in price_data or price_data[ticker].empty:
-                raise ValueError(
+                raise DataError(
                     f"No price data returned for ticker {ticker}"
                 )
 
@@ -45,7 +50,7 @@ def get_close_prices(tickers: list[str], start: str, end: str, db_path: str | Pa
             cached = load_prices(ticker, start, end, db_path)
 
         if cached.empty:
-            raise ValueError(
+            raise DataError(
                 f"No cached price data available for ticker {ticker}"
             )
 
@@ -65,7 +70,7 @@ def get_close_prices(tickers: list[str], start: str, end: str, db_path: str | Pa
     dropped = before - len(after)
 
     if before == 0:
-        raise ValueError(
+        raise DataError(
             "No price dates available for the requested range."
         )
 
@@ -77,7 +82,7 @@ def get_close_prices(tickers: list[str], start: str, end: str, db_path: str | Pa
             for ticker, count in missing_counts.items()
         )
 
-        raise ValueError(
+        raise DataError(
             f"Dropped {missing_fraction:.1%} of dates "
             f"({dropped}/{before}) due to missing prices. "
             f"Missing prices by ticker: {counts}. "
@@ -85,8 +90,14 @@ def get_close_prices(tickers: list[str], start: str, end: str, db_path: str | Pa
         )
 
     if after.empty:
-        raise ValueError(
+        raise DataError(
             "No dates have complete closing prices for all tickers."
         )
 
     return after
+
+
+def get_returns(tickers: list[str], start: str, end: str, db_path: str | Path = 'data/prices.db', max_missing_fraction: float = 0.05) -> pd.DataFrame:
+    prices = get_close_prices(
+        tickers, start, end, db_path, max_missing_fraction)
+    return log_returns(prices)

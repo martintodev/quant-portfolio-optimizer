@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from unittest.mock import patch
 import pytest
-from qpo.pipeline import get_close_prices, cache_covers_range
+from qpo.pipeline import get_close_prices, cache_covers_range, DataError, get_returns
 
 
 # Helper function to create a fake price DataFrame for testing
@@ -42,7 +42,7 @@ def test_get_close_prices_default_threshold_raises(tmp_path):
     with patch("qpo.pipeline.get_price_history") as mock_fetch:
         mock_fetch.side_effect = lambda tickers, start, end: {
             tickers[0]: frames[tickers[0]]}
-        with pytest.raises(ValueError, match="B: 3 missing"):
+        with pytest.raises(DataError, match="B: 3 missing"):
             get_close_prices(["A", "B"], "2023-01-02",
                              "2023-02-01", tmp_path / "prices.db")
 
@@ -118,3 +118,59 @@ def test_cache_covers_missing_end_date():
     df = pd.DataFrame(
         {"date": dates, "close": np.linspace(100, 110, len(dates))})
     assert not cache_covers_range(df, "2023-01-01", "2023-02-01")
+
+
+def test_get_close_prices_no_price_data_raises(tmp_path):
+    with patch("qpo.pipeline.get_price_history", return_value={}):
+        with pytest.raises(DataError, match="No price data returned for ticker AAPL"):
+            get_close_prices(["AAPL"], "2023-01-01",
+                             "2023-02-01", tmp_path / "prices.db")
+
+
+def test_get_close_prices_no_cached_data_raises(tmp_path):
+    with patch("qpo.pipeline.load_prices", return_value=pd.DataFrame()):
+        with patch("qpo.pipeline.get_price_history") as mock_fetch:
+            mock_fetch.return_value = {
+                "AAPL": make_fake_prices("2023-01-03", "2023-01-31")
+            }
+
+            with patch("qpo.pipeline.save_prices"):
+                with pytest.raises(DataError, match="No cached price data available for ticker AAPL"):
+                    get_close_prices(["AAPL"], "2023-01-01",
+                                     "2023-02-01", tmp_path / "prices.db")
+
+
+def test_get_close_prices_no_dates_raises(tmp_path):
+    with pytest.raises(DataError, match="No price dates available for the requested range."):
+        get_close_prices([], "2023-01-01", "2023-02-01",
+                         tmp_path / "prices.db")
+
+
+def test_get_close_prices_no_complete_dates_raises(tmp_path):
+    frames = {
+        "A": make_fake_prices("2023-01-02", "2023-01-10"),
+        "B": make_fake_prices("2023-01-20", "2023-01-31"),
+    }
+
+    with patch("qpo.pipeline.get_price_history") as mock_fetch:
+        mock_fetch.side_effect = lambda tickers, start, end: {
+            ticker: frames[ticker] for ticker in tickers
+        }
+
+        with pytest.raises(DataError, match="No dates have complete closing prices for all tickers"):
+            get_close_prices(["A", "B"], "2023-01-01", "2023-02-01",
+                             tmp_path / "prices.db", max_missing_fraction=1.0)
+
+
+def test_get_returns_drops_first_row_and_computes_log_returns():
+    prices = pd.DataFrame(
+        {"A": [100.0, 110.0, 121.0], "B": [50.0, 55.0, 60.5]},
+        index=pd.bdate_range("2023-01-02", periods=3),
+    )
+    with patch("qpo.pipeline.get_close_prices", return_value=prices):
+        result = get_returns(["A", "B"], "2023-01-02", "2023-01-05")
+
+    assert len(result) == 2
+    assert np.allclose(result["A"], [np.log(1.1), np.log(1.1)])
+    assert np.allclose(result["B"], [np.log(1.1), np.log(1.1)])
+    assert result.index.equals(prices.index[1:])
