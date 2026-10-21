@@ -39,7 +39,7 @@ src/qpo/
   pipeline.py    prices to validated returns
 tests/           unit tests; the network is mocked, so they run offline
 docs/            findings.md
-scripts/         scratch_report.py (reproduces the results below)
+scripts/         backtest_report.py (reproduces the results below)
 ```
 
 ## Getting started
@@ -83,8 +83,8 @@ The first request downloads prices from yfinance. Later requests for the same ra
 ### Reproduce the backtest results
 
 ```bash
-python scripts/scratch_report.py slice   # quick smoke test on a short window
-python scripts/scratch_report.py full    # the full run reported below
+python scripts/backtest_report.py slice   # quick smoke test on a short window
+python scripts/backtest_report.py full    # the full run reported below
 ```
 
 The first run downloads about seven years of prices for six tickers. The max-Sharpe backtest takes roughly 15 to 20 seconds.
