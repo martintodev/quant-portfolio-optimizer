@@ -52,7 +52,6 @@ cd quant-portfolio-optimizer
 python -m venv venv
 source venv/bin/activate        # Windows PowerShell: venv\Scripts\Activate.ps1
 pip install -e ".[dev]"
-mkdir data                      # where the SQLite price cache is stored
 ```
 
 Run the tests and the type checker:
@@ -116,7 +115,7 @@ Neither optimizer beat the equal-weight benchmark on Sharpe ratio in this sample
 
 - Clear 422 error responses for data and solver failures
 - API endpoints for the efficient frontier, risk metrics, and backtests
-- A Dockerfile, with the SQLite cache folder created automatically and the database path made configurable
+- A Dockerfile, with the database path made configurable
 - A dashboard on top of the API
 
 **Research ideas**

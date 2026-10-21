@@ -4,6 +4,15 @@ import sqlite3
 import pandas as pd
 
 
+def test_init_db_creates_missing_parent_folders(tmp_path):
+    db_path = tmp_path / "nested" / "folder" / "prices.db"
+    assert not db_path.parent.exists()
+
+    init_db(db_path)
+
+    assert db_path.exists()
+
+
 # Function to test the init_db function
 def test_init_db_creates_table(tmp_path):
     db_path = tmp_path / "prices.db"

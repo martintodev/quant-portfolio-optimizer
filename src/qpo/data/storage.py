@@ -6,6 +6,7 @@ from typing import cast
 
 # Function to initialize the database and create the prices table if it doesn't exist
 def init_db(db_path: str | Path = 'data/prices.db') -> None:
+    Path(db_path).parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute(
