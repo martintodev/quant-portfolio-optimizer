@@ -12,7 +12,7 @@ Python/SQL portfolio optimizer with mean-variance optimization, risk analysis (V
 - **Optimization:** minimum-variance and maximum-Sharpe portfolios with cvxpy, plus the efficient frontier. Long-only and fully invested.
 - **Risk:** historical, parametric, and Monte Carlo VaR, Expected Shortfall, CAPM beta, Sharpe ratio, and maximum drawdown.
 - **Backtesting:** walk-forward re-optimization with transaction costs, compared against an equal-weight benchmark.
-- **API:** a FastAPI service exposing the optimizer, with interactive documentation.
+- **API:** a FastAPI service exposing the optimizer, with interactive documentation. Data and solver failures return 422 with an error code and a detail message.
 
 ## Architecture
 
@@ -113,7 +113,6 @@ Neither optimizer beat the equal-weight benchmark on Sharpe ratio in this sample
 
 **Planned**
 
-- Clear 422 error responses for data and solver failures
 - API endpoints for the efficient frontier, risk metrics, and backtests
 - A Dockerfile, with the database path made configurable
 - A dashboard on top of the API

@@ -2,15 +2,27 @@ from collections.abc import Callable
 from typing import Annotated
 
 import pandas as pd
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, Request
+from fastapi.responses import JSONResponse
 
 from qpo.api.schemas import OptimizeRequest, OptimizeResponse
 from qpo.api.service import run_optimization
-from qpo.pipeline import get_returns
+from qpo.optimization.mean_variance import SolverError
+from qpo.pipeline import get_returns, DataError
 
 ReturnsProvider = Callable[[list[str], str, str], pd.DataFrame]
 
 app = FastAPI(title="Quant Portfolio Optimizer", version="0.1.0")
+
+
+@app.exception_handler(DataError)
+def data_error_handler(request: Request, exc: DataError) -> JSONResponse:
+    return JSONResponse(status_code=422, content={"error": "data_error", "detail": str(exc)})
+
+
+@app.exception_handler(SolverError)
+def solver_error_handler(request: Request, exc: SolverError) -> JSONResponse:
+    return JSONResponse(status_code=422, content={"error": "solver_error", "detail": str(exc)})
 
 
 def get_returns_provider() -> ReturnsProvider:

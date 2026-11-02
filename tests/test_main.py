@@ -1,3 +1,6 @@
+from qpo.pipeline import DataError
+from qpo.optimization.mean_variance import SolverError
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -12,6 +15,41 @@ client = TestClient(app)
 
 FAKE_RETURNS = pd.DataFrame({"A": [0.01, -0.01, 0.01, -0.01],
                              "B": [0.01, 0.01, -0.01, -0.01]})
+
+BODY = {"tickers": ["A", "B"], "start": "2023-01-01",
+        "end": "2023-06-30", "strategy": "min_variance"}
+
+
+def test_optimize_returns_422_for_data_error(make_client):
+    def failing_provider(tickers, start, end):
+        raise DataError("No price data returned for ticker ZZZ")
+
+    response = make_client(failing_provider).post("/optimize", json=BODY)
+
+    assert response.status_code == 422
+    assert response.json()["error"] == "data_error"
+    assert "ZZZ" in response.json()["detail"]
+
+
+def test_optimize_returns_422_for_solver_error(make_client):
+    def failing_provider(tickers, start, end):
+        raise SolverError("Solver failed to converge")
+
+    response = make_client(failing_provider).post("/optimize", json=BODY)
+
+    assert response.status_code == 422
+    assert response.json()["error"] == "solver_error"
+    assert "converge" in response.json()["detail"]
+
+
+def test_optimize_returns_422_when_optimizer_finds_no_solution(client_and_calls):
+    client, calls = client_and_calls
+    with patch.dict(STRATEGIES, {"min_variance": lambda window: None}):
+        response = client.post("/optimize", json=BODY)
+
+    assert response.status_code == 422
+    assert response.json()["error"] == "solver_error"
+    assert "no solution" in response.json()["detail"]
 
 
 def test_health():
@@ -55,3 +93,12 @@ def test_optimize_single_ticker(client_and_calls):
 
     assert response.status_code == 422
     assert calls == []
+
+
+@pytest.fixture
+def make_client():
+    def _make(provider):
+        app.dependency_overrides[get_returns_provider] = lambda: provider
+        return TestClient(app)
+    yield _make
+    app.dependency_overrides.clear()
