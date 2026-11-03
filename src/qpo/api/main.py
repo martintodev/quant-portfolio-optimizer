@@ -5,8 +5,8 @@ import pandas as pd
 from fastapi import FastAPI, Depends, Request
 from fastapi.responses import JSONResponse
 
-from qpo.api.schemas import OptimizeRequest, OptimizeResponse
-from qpo.api.service import run_optimization
+from qpo.api.schemas import OptimizeRequest, OptimizeResponse, FrontierRequest, FrontierResponse
+from qpo.api.service import run_optimization, run_frontier
 from qpo.optimization.mean_variance import SolverError
 from qpo.pipeline import get_returns, DataError
 
@@ -39,3 +39,13 @@ def optimize(request: OptimizeRequest, provider: Annotated[ReturnsProvider, Depe
     returns = provider(
         request.tickers, request.start.isoformat(), request.end.isoformat())
     return run_optimization(returns, request.strategy)
+
+
+@app.post("/frontier")
+def frontier(
+    request: FrontierRequest,
+    provider: Annotated[ReturnsProvider, Depends(get_returns_provider)],
+) -> FrontierResponse:
+    returns = provider(
+        request.tickers, request.start.isoformat(), request.end.isoformat())
+    return run_frontier(returns, request.n_points)

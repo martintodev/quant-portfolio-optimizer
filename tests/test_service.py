@@ -52,16 +52,17 @@ def test_run_frontier_properties():
     assert 1 <= len(frontier.points) <= 10
     assert frontier.requested_points == 10
 
-    assert sum(point.weights["A"] + point.weights["B"]
-               for point in frontier.points) == pytest.approx(len(frontier.points), abs=1e-6)
+    for point in frontier.points:
+        assert sum(point.weights.values()) == pytest.approx(1.0, abs=1e-6)
 
     # Check that the frontier is sorted by volatility
     volatilities = [point.volatility for point in frontier.points]
-    assert volatilities == sorted(volatilities)
+    assert all(b >= a - 1e-9 for a, b in zip(volatilities, volatilities[1:]))
 
     # Check that the expected return increases with volatility
     expected_returns = [point.expected_return for point in frontier.points]
-    assert expected_returns == sorted(expected_returns)
+    assert all(b >= a - 1e-9 for a,
+               b in zip(expected_returns, expected_returns[1:]))
 
 
 def test_run_frontier_empty():

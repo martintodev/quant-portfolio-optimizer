@@ -71,6 +71,7 @@ Open http://127.0.0.1:8000/docs for interactive documentation. Current endpoints
 
 - `GET /health`
 - `POST /optimize` takes tickers, a date range, and a strategy (`min_variance` or `max_sharpe`), and returns weights, expected return, volatility, and Sharpe ratio (`null` when it is undefined).
+- `POST /frontier` takes tickers, a date range, and the number of points (5 to 50, default 20), and returns the efficient frontier as a list of points, each with expected return, volatility, and weights. `requested_points` reports how many were asked for, because infeasible points are dropped and fewer may come back.
 
 ```bash
 curl -X POST http://127.0.0.1:8000/optimize \
@@ -113,7 +114,7 @@ Neither optimizer beat the equal-weight benchmark on Sharpe ratio in this sample
 
 **Planned**
 
-- API endpoints for the efficient frontier, risk metrics, and backtests
+- API endpoints for the risk metrics, and backtests
 - A Dockerfile, with the database path made configurable
 - A dashboard on top of the API
 

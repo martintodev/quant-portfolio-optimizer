@@ -20,6 +20,12 @@ BODY = {"tickers": ["A", "B"], "start": "2023-01-01",
         "end": "2023-06-30", "strategy": "min_variance"}
 
 
+DRIFT_RETURNS = pd.DataFrame({
+    "A": np.array([0.01, -0.01] * 4) + 0.0005,
+    "B": np.array([0.01, 0.01, -0.01, -0.01] * 2) + 0.0020,
+})
+
+
 def test_optimize_returns_422_for_data_error(make_client):
     def failing_provider(tickers, start, end):
         raise DataError("No price data returned for ticker ZZZ")
@@ -56,6 +62,20 @@ def test_health():
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
+
+
+def test_frontier_endpoint(make_client):
+    client = make_client(lambda tickers, start, end: DRIFT_RETURNS)
+    body = {"tickers": ["A", "B"], "start": "2023-01-01",
+            "end": "2023-06-30", "n_points": 10}
+    response = client.post("/frontier", json=body)
+
+    assert response.status_code == 200
+    result = response.json()
+    assert result["requested_points"] == 10
+    assert 1 <= len(result["points"]) <= 10
+    assert set(result["points"][0]) == {
+        "expected_return", "volatility", "weights"}
 
 
 @pytest.fixture
@@ -102,3 +122,13 @@ def make_client():
         return TestClient(app)
     yield _make
     app.dependency_overrides.clear()
+
+
+def test_frontier_incorrect_n_points(client_and_calls):
+    client, calls = client_and_calls
+    body = {"tickers": ["A", "B"], "start": "2023-01-01", "end": "2023-06-30",
+            "n_points": 100}  # Invalid n_points > 50
+    response = client.post("/frontier", json=body)
+
+    assert response.status_code == 422
+    assert calls == []
