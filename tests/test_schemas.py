@@ -1,5 +1,5 @@
 from pydantic import ValidationError
-from qpo.api.schemas import OptimizeRequest
+from qpo.api.schemas import OptimizeRequest, FrontierRequest
 from datetime import date
 import pytest
 
@@ -67,3 +67,65 @@ class TestOptimizeRequest:
                 end=date(2023, 12, 31)
             )
         assert exc_info.value.errors()[0]["type"] == "value_error"
+
+
+class TestFrontierRequest:
+    # Test a perfectly valid request payload with n_points above upper bound
+    def test_FrontierRequest_valid_upper_bound(self):
+        request = FrontierRequest(
+            tickers=["AAPL", "MSFT"],
+            start=date(2023, 1, 1),
+            end=date(2023, 12, 31),
+            n_points=50
+        )
+        assert request.n_points == 50
+
+    # Test a perfectly valid request payload with n_points below lower bound
+    def test_FrontierRequest_valid_lower_bound(self):
+
+        request = FrontierRequest(
+            tickers=["AAPL", "MSFT"],
+            start=date(2023, 1, 1),
+            end=date(2023, 12, 31),
+            n_points=5
+        )
+        assert request.n_points == 5
+
+    # Test the default value for n_points
+    def test_FrontierRequest_default_n_points(self):
+
+        request = FrontierRequest(
+            tickers=["AAPL", "MSFT"],
+            start=date(2023, 1, 1),
+            end=date(2023, 12, 31)
+        )
+        assert request.n_points == 20
+
+    def test_FrontierRequest_start_equal_end_rejected(self):
+        with pytest.raises(ValidationError) as exc_info:
+            FrontierRequest(
+                tickers=["AAPL", "MSFT"],
+                start=date(2023, 12, 31),
+                end=date(2023, 12, 31)
+            )
+        assert exc_info.value.errors()[0]["type"] == "value_error"
+
+    def test_FrontierRequest_above_upper_bound_rejected(self):
+        with pytest.raises(ValidationError) as exc_info:
+            FrontierRequest(
+                tickers=["AAPL", "MSFT"],
+                start=date(2023, 1, 1),
+                end=date(2023, 12, 31),
+                n_points=51
+            )
+        assert exc_info.value.errors()[0]["type"] == "less_than_equal"
+
+    def test_FrontierRequest_below_lower_bound_rejected(self):
+        with pytest.raises(ValidationError) as exc_info:
+            FrontierRequest(
+                tickers=["AAPL", "MSFT"],
+                start=date(2023, 1, 1),
+                end=date(2023, 12, 31),
+                n_points=4
+            )
+        assert exc_info.value.errors()[0]["type"] == "greater_than_equal"

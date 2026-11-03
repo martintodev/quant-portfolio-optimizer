@@ -25,3 +25,18 @@ class OptimizeResponse(BaseModel):
 
 class OptimizeRequest(DateRangeRequest):
     strategy: Literal["min_variance", "max_sharpe"] = "min_variance"
+
+
+class FrontierRequest(DateRangeRequest):
+    n_points: int = Field(default=20, ge=5, le=50)
+
+
+class FrontierPoint(BaseModel):
+    expected_return: float
+    volatility: float
+    weights: dict[str, float]
+
+
+class FrontierResponse(BaseModel):
+    points: list[FrontierPoint]
+    requested_points: int
