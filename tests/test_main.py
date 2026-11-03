@@ -132,3 +132,17 @@ def test_frontier_incorrect_n_points(client_and_calls):
 
     assert response.status_code == 422
     assert calls == []
+
+
+def test_frontier_failing_provider(make_client):
+    def failing_provider(tickers, start, end):
+        raise DataError("No price data returned for ticker ZZZ")
+
+    client = make_client(failing_provider)
+    body = {"tickers": ["A", "B"], "start": "2023-01-01",
+            "end": "2023-06-30", "n_points": 10}
+    response = client.post("/frontier", json=body)
+
+    assert response.status_code == 422
+    assert response.json()["error"] == "data_error"
+    assert "ZZZ" in response.json()["detail"]
