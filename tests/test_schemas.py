@@ -159,64 +159,62 @@ class TestRiskRequest:
         assert request.confidence_level == 0.95
         assert request.seed == 0
 
-        def test_RiskRequest_negative_weights_accepted(self):
-            request = RiskRequest(
+    def test_RiskRequest_negative_weights_accepted(self):
+        request = RiskRequest(
+            tickers=["AAPL", "MSFT"],
+            start=date(2023, 1, 1),
+            end=date(2023, 12, 31),
+            weights={"AAPL": -0.6, "MSFT": 1.6},
+        )
+        assert request.weights == {"AAPL": -0.6, "MSFT": 1.6}
+
+    def test_RiskRequest_weights_mismatch_rejected(self):
+        with pytest.raises(ValidationError) as exc_info:
+            RiskRequest(
                 tickers=["AAPL", "MSFT"],
                 start=date(2023, 1, 1),
                 end=date(2023, 12, 31),
-                weights={"AAPL": -0.6, "MSFT": 1.6},
+                weights={"AAPL": 0.6, "MSFT": 0.4},
                 confidence_level=0.95,
                 seed=0
             )
-            assert request.weights == {"AAPL": -0.6, "MSFT": 1.6}
+        assert exc_info.value.errors()[0]["type"] == "value_error"
+        assert "match" in str(exc_info.value)
 
-        def test_RiskRequest_weights_mismatch_rejected(self):
-            with pytest.raises(ValidationError) as exc_info:
-                RiskRequest(
-                    tickers=["AAPL", "MSFT"],
-                    start=date(2023, 1, 1),
-                    end=date(2023, 12, 31),
-                    weights={"AAPL": 0.6},  # Missing MSFT
-                    confidence_level=0.95,
-                    seed=0
-                )
-            assert exc_info.value.errors()[0]["type"] == "value_error"
-            assert "match" in str(exc_info.value)
+    def test_weights_sum_not_close_to_1_rejected(self):
+        with pytest.raises(ValidationError) as exc_info:
+            RiskRequest(
+                tickers=["AAPL", "MSFT"],
+                start=date(2023, 1, 1),
+                end=date(2023, 12, 31),
+                weights={"AAPL": 0.5, "MSFT": 0.4},  # Sum is 0.9
+                confidence_level=0.95,
+                seed=0
+            )
+        assert exc_info.value.errors()[0]["type"] == "value_error"
+        assert "sum" in str(exc_info.value)
 
-        def test_weights_sum_not_close_to_1_rejected(self):
-            with pytest.raises(ValidationError) as exc_info:
-                RiskRequest(
-                    tickers=["AAPL", "MSFT"],
-                    start=date(2023, 1, 1),
-                    end=date(2023, 12, 31),
-                    weights={"AAPL": 0.5, "MSFT": 0.3},  # Sum is 0.9
-                    confidence_level=0.95,
-                    seed=0
-                )
-            assert exc_info.value.errors()[0]["type"] == "value_error"
-            assert "sum" in str(exc_info.value)
+    def test_RiskRequest_confidence_level_bounds(self):
+        # Test lower bound
+        with pytest.raises(ValidationError) as exc_info:
+            RiskRequest(
+                tickers=["AAPL", "MSFT"],
+                start=date(2023, 1, 1),
+                end=date(2023, 12, 31),
+                weights={"AAPL": 0.6, "MSFT": 0.4},
+                confidence_level=0.89,  # Below lower bound
+                seed=0
+            )
+        assert exc_info.value.errors()[0]["type"] == "greater_than_equal"
 
-        def test_RiskRequest_confidence_level_bounds(self):
-            # Test lower bound
-            with pytest.raises(ValidationError) as exc_info:
-                RiskRequest(
-                    tickers=["AAPL", "MSFT"],
-                    start=date(2023, 1, 1),
-                    end=date(2023, 12, 31),
-                    weights={"AAPL": 0.6, "MSFT": 0.4},
-                    confidence_level=0.89,  # Below lower bound
-                    seed=0
-                )
-            assert exc_info.value.errors()[0]["type"] == "greater_than_equal"
-
-            # Test upper bound
-            with pytest.raises(ValidationError) as exc_info:
-                RiskRequest(
-                    tickers=["AAPL", "MSFT"],
-                    start=date(2023, 1, 1),
-                    end=date(2023, 12, 31),
-                    weights={"AAPL": 0.6, "MSFT": 0.4},
-                    confidence_level=0.991,  # Above upper bound
-                    seed=0
-                )
-            assert exc_info.value.errors()[0]["type"] == "less_than_equal"
+        # Test upper bound
+        with pytest.raises(ValidationError) as exc_info:
+            RiskRequest(
+                tickers=["AAPL", "MSFT"],
+                start=date(2023, 1, 1),
+                end=date(2023, 12, 31),
+                weights={"AAPL": 0.6, "MSFT": 0.4},
+                confidence_level=0.991,  # Above upper bound
+                seed=0
+            )
+        assert exc_info.value.errors()[0]["type"] == "less_than_equal"
