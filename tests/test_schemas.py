@@ -174,10 +174,11 @@ class TestRiskRequest:
                 tickers=["AAPL", "MSFT"],
                 start=date(2023, 1, 1),
                 end=date(2023, 12, 31),
-                weights={"AAPL": 0.6, "MSFT": 0.4},
+                weights={"AAPL": 0.6, "GOOGL": 0.4},  # Mismatched ticker
                 confidence_level=0.95,
                 seed=0
             )
+
         assert exc_info.value.errors()[0]["type"] == "value_error"
         assert "match" in str(exc_info.value)
 
