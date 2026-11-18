@@ -4,6 +4,7 @@ import pandas as pd
 import pytest
 from qpo.api.service import STRATEGIES, run_optimization, run_frontier, run_risk_analysis
 from qpo.optimization.mean_variance import SolverError
+from qpo.pipeline import DataError
 
 RETURNS = pd.DataFrame({"A": [0.01, -0.01, 0.01, -0.01],
                         "B": [0.01, 0.01, -0.01, -0.01]})
@@ -125,5 +126,5 @@ def test_run_risk_mismatched_labels():
                             "B": np.zeros(5)})
     weights = {"A": 0.25, "C": 0.75}  # C is not in returns
 
-    with pytest.raises(ValueError, match=r"unknown tickers: \['C'\]"):
+    with pytest.raises(DataError, match=r"weights tickers \['A', 'C'\] do not match returns columns \['A', 'B'\]"):
         run_risk_analysis(returns, weights, 0.95, seed=42)

@@ -5,8 +5,8 @@ import pandas as pd
 from fastapi import FastAPI, Depends, Request
 from fastapi.responses import JSONResponse
 
-from qpo.api.schemas import OptimizeRequest, OptimizeResponse, FrontierRequest, FrontierResponse
-from qpo.api.service import run_optimization, run_frontier
+from qpo.api.schemas import OptimizeRequest, OptimizeResponse, FrontierRequest, FrontierResponse, RiskRequest, RiskResponse
+from qpo.api.service import run_optimization, run_frontier, run_risk_analysis
 from qpo.optimization.mean_variance import SolverError
 from qpo.pipeline import get_returns, DataError
 
@@ -49,3 +49,10 @@ def frontier(
     returns = provider(
         request.tickers, request.start.isoformat(), request.end.isoformat())
     return run_frontier(returns, request.n_points)
+
+
+@app.post("/risk", response_model=RiskResponse)
+def risk(request: RiskRequest, provider: Annotated[ReturnsProvider, Depends(get_returns_provider)]) -> RiskResponse:
+    returns = provider(
+        request.tickers, request.start.isoformat(), request.end.isoformat())
+    return run_risk_analysis(returns, request.weights, request.confidence_level, seed=request.seed)

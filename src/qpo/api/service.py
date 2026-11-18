@@ -5,6 +5,7 @@ import math
 from qpo.analytics.risk import annualized_expected_returns, covariance_matrix, expected_shortfall, historical_var, monte_carlo_var, parametric_var
 from qpo.api.schemas import OptimizeResponse, FrontierPoint, FrontierResponse, RiskResponse
 from qpo.backtest.engine import WeightFn, max_sharpe_weights_for_window, weights_for_window
+from qpo.pipeline import DataError
 from qpo.optimization.mean_variance import SolverError, portfolio_return, portfolio_volatility, sharpe_ratio, efficient_frontier
 
 STRATEGIES: dict[str, WeightFn] = {
@@ -53,9 +54,9 @@ def run_frontier(returns: pd.DataFrame, n_points: int) -> FrontierResponse:
 
 
 def run_risk_analysis(returns: pd.DataFrame, weights: dict[str, float], confidence_level: float, seed: int) -> RiskResponse:
-    unknown = sorted(set(weights) - set(returns.columns))
-    if unknown:
-        raise ValueError(f"weights reference unknown tickers: {unknown}")
+    if set(weights) != set(returns.columns):
+        raise DataError(
+            f"weights tickers {sorted(weights)} do not match returns columns {sorted(returns.columns)}")
     portfolio = returns.dot(pd.Series(weights))
     return RiskResponse(
         historical_var=float(historical_var(portfolio, confidence_level)),
