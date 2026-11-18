@@ -1,6 +1,7 @@
 from datetime import date
 from typing import Literal, Self
 from pydantic import BaseModel, Field, model_validator
+import numpy as np
 
 
 class DateRangeRequest(BaseModel):
@@ -9,10 +10,9 @@ class DateRangeRequest(BaseModel):
     end: date
 
     @model_validator(mode="after")
-    def validate_time_order(self) -> Self:
-        if self.end <= self.start:
-            raise ValueError(
-                "The 'end' date must come strictly after the 'start' date.")
+    def validate_unique_tickers(self) -> Self:
+        if len({ticker.upper() for ticker in self.tickers}) != len(self.tickers):
+            raise ValueError("Tickers must be unique.")
         return self
 
 
@@ -40,3 +40,18 @@ class FrontierPoint(BaseModel):
 class FrontierResponse(BaseModel):
     points: list[FrontierPoint]
     requested_points: int
+
+
+class RiskRequest(DateRangeRequest):
+    weights: dict[str, float]
+    confidence_level: float = Field(default=0.95, ge=0.90, le=0.99)
+    seed: int = 0
+
+    @model_validator(mode="after")
+    def validate_weights(self) -> Self:
+        if set(self.weights.keys()) != set(self.tickers):
+            raise ValueError(
+                "The 'weights' keys must match the 'tickers' exactly.")
+        if not np.isclose(sum(self.weights.values()), 1.0, atol=0.01):
+            raise ValueError("Weights must sum to 1 (within 0.01).")
+        return self

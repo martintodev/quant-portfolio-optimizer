@@ -99,3 +99,20 @@ def test_expected_shortfall():
     calculated_es = expected_shortfall(returns, confidence_level)
     # ES should be greater than or equal to VaR
     assert calculated_es >= historical_var_value
+
+
+def test_monte_carlo_var_with_equal_seed():
+    returns = pd.Series([0.01, -0.02, 0.03, -0.01, 0.02])
+    confidence_level = 0.95
+    seed = 42
+    var1 = monte_carlo_var(returns, confidence_level, seed=seed)
+    var2 = monte_carlo_var(returns, confidence_level, seed=seed)
+    assert np.isclose(var1, var2)
+
+
+def test_monte_carlo_var_with_different_seeds():
+    returns = pd.Series([0.01, -0.02, 0.03, -0.01, 0.02])
+    confidence_level = 0.95
+    var1 = monte_carlo_var(returns, confidence_level, seed=42)
+    var2 = monte_carlo_var(returns, confidence_level, seed=43)
+    assert not np.isclose(var1, var2)

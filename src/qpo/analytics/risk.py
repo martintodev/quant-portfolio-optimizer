@@ -41,10 +41,11 @@ def parametric_var(returns: pd.Series, confidence_level: float) -> float:
 
 
 # Calculates the Monte Carlo Value at Risk (VaR) of a series of returns at a given confidence level
-def monte_carlo_var(returns: pd.Series, confidence_level: float, num_simulations: int = 10000) -> float:
+def monte_carlo_var(returns: pd.Series, confidence_level: float, num_simulations: int = 10000, seed: int | None = None) -> float:
+    rng = np.random.default_rng(seed)
     simMean = returns.mean()
     simStd = returns.std()
-    simReturns = pd.Series(np.random.normal(simMean, simStd, num_simulations))
+    simReturns = pd.Series(rng.normal(simMean, simStd, num_simulations))
     return historical_var(simReturns, confidence_level)
 
 
