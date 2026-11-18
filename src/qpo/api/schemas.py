@@ -49,6 +49,13 @@ class FrontierResponse(BaseModel):
     requested_points: int
 
 
+class RiskResponse(BaseModel):
+    historical_var: float
+    parametric_var: float
+    monte_carlo_var: float
+    expected_shortfall: float
+
+
 class RiskRequest(DateRangeRequest):
     weights: dict[str, float]
     confidence_level: float = Field(default=0.95, ge=0.90, le=0.99)

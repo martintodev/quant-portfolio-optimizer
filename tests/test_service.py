@@ -2,7 +2,7 @@ from unittest.mock import patch
 import numpy as np
 import pandas as pd
 import pytest
-from qpo.api.service import STRATEGIES, run_optimization, run_frontier
+from qpo.api.service import STRATEGIES, run_optimization, run_frontier, run_risk_analysis
 from qpo.optimization.mean_variance import SolverError
 
 RETURNS = pd.DataFrame({"A": [0.01, -0.01, 0.01, -0.01],
@@ -14,6 +14,11 @@ DRIFT_RETURNS = pd.DataFrame({
     "A": np.array([0.01, -0.01] * 4) + 0.0005,
     "B": np.array([0.01, 0.01, -0.01, -0.01] * 2) + 0.0020,
 })
+
+
+@pytest.fixture
+def returns():
+    return pd.DataFrame({"A": 2 * np.array([0.01, -0.02, 0.03, -0.01, 0.02]), "B": np.zeros(5)})
 
 
 def test_run_optimization_computes_metrics_for_fixed_weights():
@@ -69,3 +74,56 @@ def test_run_frontier_empty():
     with patch("qpo.api.service.efficient_frontier", return_value=pd.DataFrame()):
         with pytest.raises(SolverError, match="no solution"):
             run_frontier(DRIFT_RETURNS, 10)
+
+
+def test_run_risk_analysis_computes_metrics():
+    returns = pd.DataFrame({"A": 2 * np.array([0.01, -0.02, 0.03, -0.01, 0.02]),
+                            "B": np.zeros(5)})
+    # deliberately in a different order than the columns
+    weights = {"B": 0.75, "A": 0.25}
+
+    response = run_risk_analysis(returns, weights, 0.95, seed=0)
+
+    assert response.historical_var == pytest.approx(0.009)
+    assert response.parametric_var == pytest.approx(0.014054, abs=1e-5)
+    assert response.expected_shortfall == pytest.approx(0.01)
+    assert response.monte_carlo_var == pytest.approx(0.013877, abs=1e-3)
+
+
+def test_run_risk_keyorder_independent():
+    returns = pd.DataFrame({"A": 2 * np.array([0.01, -0.02, 0.03, -0.01, 0.02]),
+                            "B": np.zeros(5)})
+    # deliberately in a different order than the columns
+    weights = {"B": 0.75, "A": 0.25}
+
+    response1 = run_risk_analysis(returns, weights, 0.95, seed=0)
+    response2 = run_risk_analysis(
+        returns[["B", "A"]], {"A": 0.25, "B": 0.75}, 0.95, seed=0)
+
+    assert response1.historical_var == pytest.approx(response2.historical_var)
+    assert response1.parametric_var == pytest.approx(response2.parametric_var)
+
+
+def test_run_risk_seed_reproducible():
+    returns = pd.DataFrame({"A": 2 * np.array([0.01, -0.02, 0.03, -0.01, 0.02]),
+                            "B": np.zeros(5)})
+    weights = {"A": 0.25, "B": 0.75}
+
+    response1 = run_risk_analysis(returns, weights, 0.95, seed=42)
+    response2 = run_risk_analysis(returns, weights, 0.95, seed=42)
+
+    assert response1.historical_var == pytest.approx(response2.historical_var)
+    assert response1.parametric_var == pytest.approx(response2.parametric_var)
+    assert response1.expected_shortfall == pytest.approx(
+        response2.expected_shortfall)
+    assert response1.monte_carlo_var == pytest.approx(
+        response2.monte_carlo_var)
+
+
+def test_run_risk_mismatched_labels():
+    returns = pd.DataFrame({"A": 2 * np.array([0.01, -0.02, 0.03, -0.01, 0.02]),
+                            "B": np.zeros(5)})
+    weights = {"A": 0.25, "C": 0.75}  # C is not in returns
+
+    with pytest.raises(ValueError, match=r"unknown tickers: \['C'\]"):
+        run_risk_analysis(returns, weights, 0.95, seed=42)
