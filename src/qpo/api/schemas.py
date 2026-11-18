@@ -15,6 +15,13 @@ class DateRangeRequest(BaseModel):
             raise ValueError("Tickers must be unique.")
         return self
 
+    @model_validator(mode="after")
+    def validate_time_order(self) -> Self:
+        if self.end <= self.start:
+            raise ValueError(
+                "The 'end' date must come strictly after the 'start' date.")
+        return self
+
 
 class OptimizeResponse(BaseModel):
     weights: dict[str, float]
